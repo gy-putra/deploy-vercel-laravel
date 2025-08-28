@@ -1,0 +1,242 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\PilgrimResource\Pages;
+use App\Models\Pilgrim;
+use App\Models\Package;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Section;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
+
+class PilgrimResource extends Resource
+{
+    protected static ?string $model = Pilgrim::class;
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Section::make('Personal Information')
+                    ->schema([
+                        TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('nik')
+                            ->label('NIK (National ID)')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(16)
+                            ->minLength(16),
+                        TextInput::make('passport_number')
+                            ->maxLength(255),
+                        DatePicker::make('birth_date')
+                            ->required(),
+                        Select::make('gender')
+                            ->options([
+                                'male' => 'Male',
+                                'female' => 'Female',
+                            ])
+                            ->required(),
+                    ])->columns(2),
+
+                Section::make('Contact Information')
+                    ->schema([
+                        TextInput::make('phone')
+                            ->tel()
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('email')
+                            ->email()
+                            ->maxLength(255),
+                        Textarea::make('address')
+                            ->required()
+                            ->rows(3),
+                    ])->columns(2),
+
+                Section::make('Emergency Contact')
+                    ->schema([
+                        TextInput::make('emergency_contact_name')
+                            ->maxLength(255),
+                        TextInput::make('emergency_contact_phone')
+                            ->tel()
+                            ->maxLength(255),
+                    ])->columns(2),
+
+                Section::make('Package & Status')
+                    ->schema([
+                        Select::make('package_id')
+                            ->label('Package')
+                            ->relationship('package', 'name')
+                            ->required()
+                            ->searchable()
+                            ->preload(),
+                        DatePicker::make('registration_date')
+                            ->required()
+                            ->default(now()),
+                        Select::make('payment_status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'partial' => 'Partial Payment',
+                                'paid' => 'Fully Paid',
+                                'refunded' => 'Refunded',
+                            ])
+                            ->required()
+                            ->default('pending'),
+                        Select::make('status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'processing' => 'Processing',
+                                'ready_to_depart' => 'Ready to Depart',
+                                'completed' => 'Completed',
+                            ])
+                            ->required()
+                            ->default('pending'),
+                    ])->columns(2),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('nik')
+                    ->label('NIK')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('passport_number')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('Not provided'),
+                TextColumn::make('phone')
+                    ->searchable(),
+                TextColumn::make('package.name')
+                    ->label('Package')
+                    ->sortable(),
+                BadgeColumn::make('payment_status')
+                    ->colors([
+                        'danger' => 'pending',
+                        'warning' => 'partial',
+                        'success' => 'paid',
+                        'secondary' => 'refunded',
+                    ])
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Pending',
+                        'partial' => 'Partial',
+                        'paid' => 'Paid',
+                        'refunded' => 'Refunded',
+                        default => $state,
+                    }),
+                BadgeColumn::make('status')
+                    ->colors([
+                        'secondary' => 'pending',
+                        'warning' => 'processing',
+                        'success' => 'ready_to_depart',
+                        'primary' => 'completed',
+                    ])
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Pending',
+                        'processing' => 'Processing',
+                        'ready_to_depart' => 'Ready to Depart',
+                        'completed' => 'Completed',
+                        default => $state,
+                    }),
+                TextColumn::make('registration_date')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('document_completeness')
+                    ->label('Documents')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Complete' => 'success',
+                        'Incomplete' => 'danger',
+                        default => 'secondary',
+                    }),
+            ])
+            ->filters([
+                SelectFilter::make('package_id')
+                    ->label('Package')
+                    ->relationship('package', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('payment_status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'partial' => 'Partial Payment',
+                        'paid' => 'Fully Paid',
+                        'refunded' => 'Refunded',
+                    ]),
+                SelectFilter::make('status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'processing' => 'Processing',
+                        'ready_to_depart' => 'Ready to Depart',
+                        'completed' => 'Completed',
+                    ]),
+                Filter::make('registration_date')
+                    ->form([
+                        DatePicker::make('registered_from')
+                            ->label('Registered from'),
+                        DatePicker::make('registered_until')
+                            ->label('Registered until'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['registered_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('registration_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['registered_until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('registration_date', '<=', $date),
+                            );
+                    }),
+            ])
+            ->actions([
+                ViewAction::make(),
+                EditAction::make(),
+            ])
+            ->bulkActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('registration_date', 'desc');
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListPilgrims::route('/'),
+            'create' => Pages\CreatePilgrim::route('/create'),
+            'view' => Pages\ViewPilgrim::route('/{record}'),
+            'edit' => Pages\EditPilgrim::route('/{record}/edit'),
+        ];
+    }
+}
