@@ -22,7 +22,7 @@ class PilgrimDocumentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = null;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pilgrim Data';
+    protected static UnitEnum|string|null $navigationGroup = 'Data Jamaah';
 
     protected static ?string $recordTitleAttribute = 'PilgrimDocument';
 

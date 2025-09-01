@@ -24,7 +24,7 @@ class UmrahPackageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = null;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Travel Packages';
+    protected static UnitEnum|string|null $navigationGroup = 'Paket Manejemen';
 
     protected static ?string $navigationLabel = 'Umrah Package List';
 

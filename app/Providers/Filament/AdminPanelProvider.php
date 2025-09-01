@@ -33,18 +33,23 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
+            ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
             ])
             ->navigationGroups([
                 NavigationGroup::make()
-                    ->label('Pilgrim Data')
+                    ->label('Data Jamaah')
                     ->icon('heroicon-o-users')
                     ->collapsed(false),
                 NavigationGroup::make()
-                    ->label('Travel Packages')
+                    ->label('Paket Manejemen')
                     ->icon('heroicon-o-map')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Financial Management')
+                    ->icon('heroicon-o-currency-dollar')
                     ->collapsed(false),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')

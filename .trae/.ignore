@@ -1,0 +1,7 @@
+**/foo
+*.log
+config.js
+
+/mtk/
+*.zip
+/mtk/do.c
