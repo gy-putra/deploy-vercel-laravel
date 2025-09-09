@@ -18,17 +18,14 @@ class PilgrimForm
             ->components([
                 TextInput::make('name')
                     ->required(),
-                TextInput::make('nik')
-                    ->required(),
+                TextInput::make('nik'),
                 TextInput::make('passport_number'),
                 TextInput::make('phone')
-                    ->tel()
-                    ->required(),
+                    ->tel(),
                 TextInput::make('email')
                     ->label('Email address')
                     ->email(),
                 Textarea::make('address')
-                    ->required()
                     ->columnSpanFull(),
                 Select::make('package_name')
                     ->label('Package')

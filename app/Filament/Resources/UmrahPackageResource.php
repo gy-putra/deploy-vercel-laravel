@@ -59,24 +59,40 @@ class UmrahPackageResource extends Resource
                             ->label('Departure Date')
                             ->native(false),
                         
+                        Forms\Components\DatePicker::make('arrival_date')
+                            ->label('Arrival Date')
+                            ->native(false),
+                        
                         Forms\Components\Toggle::make('is_active')
                             ->label('Active Status')
                             ->default(true),
                     ])
                     ->columns(2),
                 
-                Section::make('Package Details')
+                Section::make('Travel & Accommodation Details')
                     ->schema([
-                        Forms\Components\TagsInput::make('facilities')
-                            ->label('Facilities')
-                            ->placeholder('Add facility and press Enter')
-                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('airlines')
+                            ->label('Airlines')
+                            ->maxLength(255),
+                        
+                        Forms\Components\TextInput::make('flight_number')
+                            ->label('Flight Number')
+                            ->maxLength(255),
+                        
+                        Forms\Components\TextInput::make('hotel_madinah')
+                            ->label('Hotel Madinah')
+                            ->maxLength(255),
+                        
+                        Forms\Components\TextInput::make('hotel_makkah')
+                            ->label('Hotel Makkah')
+                            ->maxLength(255),
                         
                         Forms\Components\Textarea::make('description')
                             ->label('Description')
                             ->rows(4)
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -86,7 +102,8 @@ class UmrahPackageResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
                 
                 Tables\Columns\TextColumn::make('formatted_price')
                     ->label('Price')
@@ -103,7 +120,52 @@ class UmrahPackageResource extends Resource
                     ->label('Departure')
                     ->date('d M Y')
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->placeholder('-'),
+                
+                Tables\Columns\TextColumn::make('arrival_date')
+                    ->label('Arrival')
+                    ->date('d M Y')
+                    ->sortable()
+                    ->alignCenter()
+                    ->placeholder('-'),
+                
+                Tables\Columns\TextColumn::make('airlines')
+                    ->label('Airlines')
+                    ->searchable()
+                    ->sortable()
+                    ->limit(20)
+                    ->tooltip(function ($record): ?string {
+                        return $record->airlines ? $record->airlines : null;
+                    })
+                    ->placeholder('-'),
+                
+                Tables\Columns\TextColumn::make('flight_number')
+                    ->label('Flight No.')
+                    ->searchable()
+                    ->sortable()
+                    ->alignCenter()
+                    ->placeholder('-'),
+                
+                Tables\Columns\TextColumn::make('hotel_madinah')
+                    ->label('Hotel Madinah')
+                    ->searchable()
+                    ->sortable()
+                    ->limit(25)
+                    ->tooltip(function ($record): ?string {
+                        return $record->hotel_madinah ? $record->hotel_madinah : null;
+                    })
+                    ->placeholder('-'),
+                
+                Tables\Columns\TextColumn::make('hotel_makkah')
+                    ->label('Hotel Makkah')
+                    ->searchable()
+                    ->sortable()
+                    ->limit(25)
+                    ->tooltip(function ($record): ?string {
+                        return $record->hotel_makkah ? $record->hotel_makkah : null;
+                    })
+                    ->placeholder('-'),
                 
                 Tables\Columns\TextColumn::make('remaining_quota')
                     ->label('Available Quota')

@@ -14,19 +14,13 @@ class PilgrimDocument extends Model
     protected $fillable = [
         'pilgrim_id',
         'document_type',
-        'file',
-        'description',
-        'category',
-        'status',
-        'notes',
-        'uploaded_at',
-        'verified_at',
-        'verified_by',
+        'files',
+        'is_optional',
     ];
 
     protected $casts = [
-        'uploaded_at' => 'datetime',
-        'verified_at' => 'datetime',
+        'files' => 'array',
+        'is_optional' => 'boolean',
     ];
 
     /**
@@ -51,8 +45,13 @@ class PilgrimDocument extends Model
     public function getDocumentTypeLabelAttribute(): string
     {
         return match($this->document_type) {
+            'ktp' => 'KTP (ID Card)',
+            'kk' => 'KK (Family Card)',
             'passport' => 'Passport',
             'visa' => 'Visa',
+            'marriage_certificate' => 'Marriage Certificate',
+            'birth_certificate' => 'Birth Certificate',
+            'transfer_proof' => 'Transfer Proof',
             'vaccine' => 'Vaccine Certificate',
             'ticket' => 'Flight Ticket',
             default => 'Unknown'
@@ -60,64 +59,67 @@ class PilgrimDocument extends Model
     }
 
     /**
-     * Get the formatted status.
+     * Get the first file from the files array.
      */
-    public function getStatusLabelAttribute(): string
+    public function getFirstFileAttribute(): ?string
     {
-        return match($this->status) {
-            'pending' => 'Pending Review',
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-            default => 'Unknown'
-        };
+        return $this->files && is_array($this->files) && count($this->files) > 0 ? $this->files[0] : null;
     }
 
     /**
-     * Get the formatted file size from the actual file.
+     * Get the formatted file size from the first file.
      */
     public function getFormattedFileSizeAttribute(): string
     {
-        if (!$this->file || !Storage::exists($this->file)) {
+        $firstFile = $this->first_file;
+        if (!$firstFile || !Storage::exists($firstFile)) {
             return 'N/A';
         }
         
-        $bytes = Storage::size($this->file);
-        $units = ['B', 'KB', 'MB', 'GB'];
-        
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
-            $bytes /= 1024;
+        try {
+            $bytes = Storage::size($firstFile);
+            $units = ['B', 'KB', 'MB', 'GB'];
+            
+            for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+                $bytes /= 1024;
+            }
+            
+            return round($bytes, 2) . ' ' . $units[$i];
+        } catch (\Exception $e) {
+            return 'N/A';
         }
-        
-        return round($bytes, 2) . ' ' . $units[$i];
     }
 
     /**
-     * Get the full URL to the document file.
+     * Get the full URL to the first document file.
      */
     public function getFileUrlAttribute(): string
     {
-        return $this->file ? Storage::url($this->file) : '';
+        $firstFile = $this->first_file;
+        return $firstFile ? Storage::url($firstFile) : '';
     }
 
     /**
-     * Check if the document is an image.
+     * Check if the first document is an image.
      */
     public function getIsImageAttribute(): bool
     {
-        if (!$this->file) return false;
+        $firstFile = $this->first_file;
+        if (!$firstFile) return false;
         
-        $extension = strtolower(pathinfo($this->file, PATHINFO_EXTENSION));
+        $extension = strtolower(pathinfo($firstFile, PATHINFO_EXTENSION));
         return in_array($extension, ['jpg', 'jpeg', 'png']);
     }
 
     /**
-     * Check if the document is a PDF.
+     * Check if the first document is a PDF.
      */
     public function getIsPdfAttribute(): bool
     {
-        if (!$this->file) return false;
+        $firstFile = $this->first_file;
+        if (!$firstFile) return false;
         
-        $extension = strtolower(pathinfo($this->file, PATHINFO_EXTENSION));
+        $extension = strtolower(pathinfo($firstFile, PATHINFO_EXTENSION));
         return $extension === 'pdf';
     }
 
@@ -130,23 +132,19 @@ class PilgrimDocument extends Model
     }
 
     /**
-     * Scope to filter by status.
-     */
-    public function scopeByStatus($query, $status)
-    {
-        return $query->where('status', $status);
-    }
-
-    /**
-     * Delete the physical file when the model is deleted.
+     * Delete the physical files when the model is deleted.
      */
     protected static function boot()
     {
         parent::boot();
 
         static::deleting(function ($document) {
-            if ($document->file && Storage::exists($document->file)) {
-                Storage::delete($document->file);
+            if ($document->files && is_array($document->files)) {
+                foreach ($document->files as $file) {
+                    if (Storage::exists($file)) {
+                        Storage::delete($file);
+                    }
+                }
             }
         });
     }

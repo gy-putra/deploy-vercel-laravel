@@ -15,16 +15,20 @@ class UmrahPackage extends Model
         'name',
         'price',
         'duration_days',
-        'facilities',
         'description',
         'departure_date',
+        'arrival_date',
+        'airlines',
+        'flight_number',
+        'hotel_madinah',
+        'hotel_makkah',
         'is_active',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'facilities' => 'array',
         'departure_date' => 'date',
+        'arrival_date' => 'date',
         'is_active' => 'boolean',
     ];
 
